@@ -21,7 +21,6 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"os"
@@ -29,59 +28,39 @@ import (
 	"encoding/json"
 	"io/ioutil"
 
-	"github.com/chromedp/chromedp"
+	"context"
+
 	"github.com/mitchellh/go-homedir"
+	"github.com/mpppk/tbf/crawl"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var cfgFile string
 
-type Circle struct {
-	Href    string
-	Space   string
-	Name    string
-	Penname string
-	Genre   string
-}
-
-// rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "tbf",
 	Short: "CLI for tech book festival",
 	Long:  `CLI for tech book festival`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
 		var err error
 
-		// create context
-		ctxt, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
-		// create chrome instance
-		c, err := chromedp.New(ctxt)
-		//c, err := chromedp.New(ctxt, chromedp.WithLog(log.Printf))
+		crawler, err := crawl.NewTBFCrawler(context.Background())
 		if err != nil {
-			log.Fatal("chromedep new error:", err)
+			panic(err)
 		}
 
-		var res []Circle
-		err = c.Run(ctxt, chromedp.Tasks{
-			chromedp.Navigate(`https://techbookfest.org/event/tbf04/circle`),
-			chromedp.WaitVisible(`li.circle-list-item`),
-			chromedp.Evaluate(
-				`Array.from(document.querySelectorAll('li.circle-list-item')).map((l) => ({href: l.querySelector('a.circle-list-item-link').getAttribute('href'), space: l.querySelector('span.circle-space-label').textContent, name: l.querySelector('span.circle-name').textContent, penname: l.querySelector('p.circle-list-item-penname').textContent, genre: l.querySelector('p.circle-list-item-genre').textContent}))`,
-				&res,
-			),
-		})
-
-		fmt.Println("res")
-		for _, r := range res {
-			fmt.Printf("%#v\n", r)
+		circles, err := crawler.FetchCircles(context.Background())
+		if err != nil {
+			panic(err)
 		}
 
-		encodedCircles, err := json.Marshal(res)
+		fmt.Println("circles")
+		for _, circle := range circles {
+			fmt.Printf("%#v\n", circle)
+		}
+
+		encodedCircles, err := json.Marshal(circles)
 		if err != nil {
 			panic(err)
 		}
@@ -90,20 +69,13 @@ var rootCmd = &cobra.Command{
 			panic(err)
 		}
 
-		if err != nil {
-			fmt.Println("click error")
-			log.Fatal("failed to click:", err)
-		}
-		fmt.Println("shutdown start")
 		// shutdown chrome
-		err = c.Shutdown(ctxt)
-		if err != nil {
+		if crawler.Shutdown(context.Background()); err != nil {
 			log.Fatal("shutdown error:", err)
 		}
 
 		// wait for chrome to finish
-		err = c.Wait()
-		if err != nil {
+		if err := crawler.Wait(); err != nil {
 			log.Fatal("wait error:", err)
 		}
 	},
