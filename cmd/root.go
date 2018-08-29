@@ -30,6 +30,8 @@ import (
 
 	"context"
 
+	"time"
+
 	"github.com/mitchellh/go-homedir"
 	"github.com/mpppk/tbf/crawl"
 	"github.com/spf13/cobra"
@@ -67,6 +69,15 @@ var rootCmd = &cobra.Command{
 
 		if err := ioutil.WriteFile("circles.json", encodedCircles, 0755); err != nil {
 			panic(err)
+		}
+
+		for _, circle := range circles {
+			circleDetail, err := crawler.FetchCircleDetail(context.Background(), circle)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Printf("%#v\n", circleDetail)
+			time.Sleep(10 * time.Minute)
 		}
 
 		// shutdown chrome
