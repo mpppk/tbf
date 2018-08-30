@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/chromedp/chromedp"
+	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 )
 
@@ -18,7 +19,7 @@ type Circle struct {
 }
 
 type CircleDetail struct {
-	Circle
+	Circle          `structs:",flatten" mapstructure:",squash"`
 	ImageURL        string
 	WebURL          string
 	GenreFreeFormat string
@@ -42,6 +43,15 @@ func NewTBFCrawler(ctx context.Context) (*TBFCrawler, error) {
 	}, nil
 }
 
+func NewCircleDetailFromMap(m map[string]string) (*CircleDetail, error) {
+	var circleDetail CircleDetail
+	err := mapstructure.Decode(m, &circleDetail)
+	if err != nil {
+		return nil, errors.Wrap(err, "field to decode circle detail map to CircleDetail struct")
+	}
+	return &circleDetail, nil
+}
+
 func (t *TBFCrawler) FetchCircles(ctx context.Context) ([]*Circle, error) {
 	var circles []*Circle
 	err := t.browser.Run(ctx, chromedp.Tasks{
@@ -63,7 +73,7 @@ func (t *TBFCrawler) FetchCircleDetail(ctx context.Context, circle *Circle) (*Ci
 	jsCmd := `
 		(() => {
 			const mat             = document.querySelector('mat-card.circle-detail-card');
-			const imageURL          = mat.querySelector('div.circle-detail-image>img').getAttribute('src');
+			const imageURL        = mat.querySelector('div.circle-detail-image>img').getAttribute('src');
 			const table           = mat.querySelector('tbody');
 			const name            = table.querySelector('span.circle-name').textContent;
 			const space           = table.querySelector('tr:nth-of-type(2)>td:nth-of-type(2)').textContent;

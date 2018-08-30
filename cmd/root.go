@@ -25,15 +25,13 @@ import (
 	"log"
 	"os"
 
-	"encoding/json"
-	"io/ioutil"
-
 	"context"
 
 	"time"
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/mpppk/tbf/crawl"
+	"github.com/mpppk/tbf/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -46,8 +44,18 @@ var rootCmd = &cobra.Command{
 	Long:  `CLI for tech book festival`,
 	Run: func(cmd *cobra.Command, args []string) {
 		var err error
-
+		csvFilePath := "circles.csv"
 		crawler, err := crawl.NewTBFCrawler(context.Background())
+		if err != nil {
+			panic(err)
+		}
+
+		circleCSV, err := util.NewCircleCSV(csvFilePath)
+		if err != nil {
+			panic(err)
+		}
+
+		circleDetailMap, err := circleCSV.ToCircleDetailMap()
 		if err != nil {
 			panic(err)
 		}
@@ -57,27 +65,32 @@ var rootCmd = &cobra.Command{
 			panic(err)
 		}
 
-		fmt.Println("circles")
-		for _, circle := range circles {
-			fmt.Printf("%#v\n", circle)
+		var filteredCircles []*crawl.Circle
+		for _, c := range circles {
+			if _, ok := circleDetailMap[c.Space]; !ok {
+				filteredCircles = append(filteredCircles, c)
+			}
 		}
 
-		encodedCircles, err := json.Marshal(circles)
-		if err != nil {
-			panic(err)
-		}
+		for i, circle := range filteredCircles {
+			fmt.Printf(
+				"all: %d, saved: %d, new: %d",
+				len(circles),
+				len(circleDetailMap)+i,
+				len(filteredCircles)-i,
+			)
 
-		if err := ioutil.WriteFile("circles.json", encodedCircles, 0755); err != nil {
-			panic(err)
-		}
-
-		for _, circle := range circles {
 			circleDetail, err := crawler.FetchCircleDetail(context.Background(), circle)
 			if err != nil {
 				panic(err)
 			}
 			fmt.Printf("%#v\n", circleDetail)
-			time.Sleep(10 * time.Minute)
+			if err := circleCSV.AppendCircleDetail(circleDetail); err != nil {
+				panic(err)
+			}
+			circleCSV.Flush()
+
+			time.Sleep(10 * time.Second)
 		}
 
 		// shutdown chrome
@@ -89,6 +102,11 @@ var rootCmd = &cobra.Command{
 		if err := crawler.Wait(); err != nil {
 			log.Fatal("wait error:", err)
 		}
+
+		if err := circleCSV.Close(); err != nil {
+			panic(err)
+		}
+
 	},
 }
 
