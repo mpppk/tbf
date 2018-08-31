@@ -88,8 +88,6 @@ var rootCmd = &cobra.Command{
 			if err := circleCSV.AppendCircleDetail(circleDetail); err != nil {
 				panic(err)
 			}
-			circleCSV.Flush()
-
 			time.Sleep(10 * time.Second)
 		}
 
@@ -102,11 +100,6 @@ var rootCmd = &cobra.Command{
 		if err := crawler.Wait(); err != nil {
 			log.Fatal("wait error:", err)
 		}
-
-		if err := circleCSV.Close(); err != nil {
-			panic(err)
-		}
-
 	},
 }
 
