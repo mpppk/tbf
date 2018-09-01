@@ -5,17 +5,19 @@ import (
 
 	"fmt"
 
+	"path"
+
 	"github.com/chromedp/chromedp"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 )
 
 type Circle struct {
-	Href    string
-	Space   string
-	Name    string
-	Penname string
-	Genre   string
+	DetailURL string
+	Space     string
+	Name      string
+	Penname   string
+	Genre     string
 }
 
 type CircleDetail struct {
@@ -58,7 +60,7 @@ func (t *TBFCrawler) FetchCircles(ctx context.Context) ([]*Circle, error) {
 		chromedp.Navigate(t.circlesURL),
 		chromedp.WaitVisible(`li.circle-list-item`),
 		chromedp.Evaluate(
-			`Array.from(document.querySelectorAll('li.circle-list-item')).map((l) => ({href: l.querySelector('a.circle-list-item-link').getAttribute('href'), space: l.querySelector('span.circle-space-label').textContent, name: l.querySelector('span.circle-name').textContent, penname: l.querySelector('p.circle-list-item-penname').textContent, genre: l.querySelector('p.circle-list-item-genre').textContent}))`,
+			`Array.from(document.querySelectorAll('li.circle-list-item')).map((l) => ({detailUrl: l.querySelector('a.circle-list-item-link').getAttribute('href'), space: l.querySelector('span.circle-space-label').textContent, name: l.querySelector('span.circle-name').textContent, penname: l.querySelector('p.circle-list-item-penname').textContent, genre: l.querySelector('p.circle-list-item-genre').textContent}))`,
 			&circles,
 		),
 	})
@@ -86,7 +88,7 @@ func (t *TBFCrawler) FetchCircleDetail(ctx context.Context, circle *Circle) (*Ci
 	`
 	var circleDetail *CircleDetail
 	err := t.browser.Run(ctx, chromedp.Tasks{
-		chromedp.Navigate(fmt.Sprintf("%s/%s", t.baseURL, circle.Href)),
+		chromedp.Navigate(fmt.Sprintf("%s/%s", t.baseURL, circle.DetailURL)),
 		chromedp.WaitVisible(`mat-card-content.mat-card-content`),
 		chromedp.Evaluate(
 			jsCmd,
@@ -94,8 +96,10 @@ func (t *TBFCrawler) FetchCircleDetail(ctx context.Context, circle *Circle) (*Ci
 		),
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("failed to fetch circle details from %s", circle.Href))
+		return nil, errors.Wrap(err, fmt.Sprintf("failed to fetch circle details from %s", circle.DetailURL))
 	}
+
+	circleDetail.DetailURL = path.Join(t.baseURL, circle.DetailURL)
 	return circleDetail, err
 }
 
