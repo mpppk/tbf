@@ -37,9 +37,9 @@ var describeCmd = &cobra.Command{
 	Use:   "describe",
 	Short: "A brief description of your command",
 	Long:  ``,
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		space := args[0]
+		spaces := args
 
 		csvFilePath := viper.GetString("file")
 		circleCSV, err := util.NewCircleCSV(csvFilePath)
@@ -52,18 +52,20 @@ var describeCmd = &cobra.Command{
 			panic(err)
 		}
 
-		circleDetail, ok := circleDetailMap[space]
-		if !ok {
-			fmt.Fprintf(os.Stderr, "circle on %s not found\n", space)
-			os.Exit(1)
-		}
+		for _, space := range spaces {
+			circleDetail, ok := circleDetailMap[space]
+			if !ok {
+				fmt.Fprintf(os.Stderr, "circle on %s not found\n", space)
+				continue
+			}
 
-		marshaledCircleDetail, err := json.Marshal(circleDetail)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "failed to convert to json from circle detail(%s): %s\n", circleDetail, err)
-			os.Exit(1)
+			marshaledCircleDetail, err := json.Marshal(circleDetail)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "failed to convert to json from circle detail(%s): %s\n", circleDetail, err)
+				continue
+			}
+			fmt.Println(string(marshaledCircleDetail))
 		}
-		fmt.Println(string(marshaledCircleDetail))
 	},
 }
 
