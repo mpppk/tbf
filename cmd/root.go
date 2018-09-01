@@ -22,16 +22,9 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
 
-	"context"
-
-	"time"
-
 	"github.com/mitchellh/go-homedir"
-	"github.com/mpppk/tbf/crawl"
-	"github.com/mpppk/tbf/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -43,63 +36,6 @@ var rootCmd = &cobra.Command{
 	Short: "CLI for tech book festival",
 	Long:  `CLI for tech book festival`,
 	Run: func(cmd *cobra.Command, args []string) {
-		var err error
-		csvFilePath := "circles.csv"
-		crawler, err := crawl.NewTBFCrawler(context.Background())
-		if err != nil {
-			panic(err)
-		}
-
-		circleCSV, err := util.NewCircleCSV(csvFilePath)
-		if err != nil {
-			panic(err)
-		}
-
-		circleDetailMap, err := circleCSV.ToCircleDetailMap()
-		if err != nil {
-			panic(err)
-		}
-
-		circles, err := crawler.FetchCircles(context.Background())
-		if err != nil {
-			panic(err)
-		}
-
-		var filteredCircles []*crawl.Circle
-		for _, c := range circles {
-			if _, ok := circleDetailMap[c.Space]; !ok {
-				filteredCircles = append(filteredCircles, c)
-			}
-		}
-
-		for i, circle := range filteredCircles {
-			fmt.Printf(
-				"all: %d, saved: %d, new: %d",
-				len(circles),
-				len(circleDetailMap)+i,
-				len(filteredCircles)-i,
-			)
-
-			circleDetail, err := crawler.FetchCircleDetail(context.Background(), circle)
-			if err != nil {
-				panic(err)
-			}
-			fmt.Printf("%#v\n", circleDetail)
-			if err := circleCSV.AppendCircleDetail(circleDetail); err != nil {
-				panic(err)
-			}
-			time.Sleep(10 * time.Second)
-		}
-
-		// shutdown chrome
-		if crawler.Shutdown(context.Background()); err != nil {
-			log.Fatal("shutdown error:", err)
-		}
-
-		// wait for chrome to finish
-		if err := crawler.Wait(); err != nil {
-			log.Fatal("wait error:", err)
-		}
 	},
 }
 
