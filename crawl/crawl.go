@@ -8,24 +8,9 @@ import (
 	"path"
 
 	"github.com/chromedp/chromedp"
-	"github.com/mitchellh/mapstructure"
+	"github.com/mpppk/tbf/tbf"
 	"github.com/pkg/errors"
 )
-
-type Circle struct {
-	DetailURL string
-	Space     string
-	Name      string
-	Penname   string
-	Genre     string
-}
-
-type CircleDetail struct {
-	Circle          `structs:",flatten" mapstructure:",squash"`
-	ImageURL        string
-	WebURL          string
-	GenreFreeFormat string
-}
 
 type TBFCrawler struct {
 	browser    *chromedp.CDP
@@ -45,17 +30,8 @@ func NewTBFCrawler(ctx context.Context) (*TBFCrawler, error) {
 	}, nil
 }
 
-func NewCircleDetailFromMap(m map[string]string) (*CircleDetail, error) {
-	var circleDetail CircleDetail
-	err := mapstructure.Decode(m, &circleDetail)
-	if err != nil {
-		return nil, errors.Wrap(err, "field to decode circle detail map to CircleDetail struct")
-	}
-	return &circleDetail, nil
-}
-
-func (t *TBFCrawler) FetchCircles(ctx context.Context) ([]*Circle, error) {
-	var circles []*Circle
+func (t *TBFCrawler) FetchCircles(ctx context.Context) ([]*tbf.Circle, error) {
+	var circles []*tbf.Circle
 	err := t.browser.Run(ctx, chromedp.Tasks{
 		chromedp.Navigate(t.circlesURL),
 		chromedp.WaitVisible(`li.circle-list-item`),
@@ -71,7 +47,7 @@ func (t *TBFCrawler) FetchCircles(ctx context.Context) ([]*Circle, error) {
 	return circles, nil
 }
 
-func (t *TBFCrawler) FetchCircleDetail(ctx context.Context, circle *Circle) (*CircleDetail, error) {
+func (t *TBFCrawler) FetchCircleDetail(ctx context.Context, circle *tbf.Circle) (*tbf.CircleDetail, error) {
 	jsCmd := `
 		(() => {
 			const mat             = document.querySelector('mat-card.circle-detail-card');
@@ -86,7 +62,7 @@ func (t *TBFCrawler) FetchCircleDetail(ctx context.Context, circle *Circle) (*Ci
 			return {imageURL, name, space, penname, webURL, genre, genreFreeFormat};
 		})();
 	`
-	var circleDetail *CircleDetail
+	var circleDetail *tbf.CircleDetail
 	err := t.browser.Run(ctx, chromedp.Tasks{
 		chromedp.Navigate(fmt.Sprintf("%s/%s", t.baseURL, circle.DetailURL)),
 		chromedp.WaitVisible(`mat-card-content.mat-card-content`),

@@ -23,7 +23,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/mpppk/tbf/util"
+	"github.com/mpppk/tbf/csv"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -35,7 +35,7 @@ var listCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		csvFilePath := viper.GetString("file")
-		circleCSV, err := util.NewCircleCSV(csvFilePath)
+		circleCSV, err := csv.NewCircleCSV(csvFilePath)
 		if err != nil {
 			panic(err)
 		}

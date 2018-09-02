@@ -27,7 +27,7 @@ import (
 
 	"encoding/json"
 
-	"github.com/mpppk/tbf/util"
+	"github.com/mpppk/tbf/csv"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -42,7 +42,7 @@ var describeCmd = &cobra.Command{
 		spaces := args
 
 		csvFilePath := viper.GetString("file")
-		circleCSV, err := util.NewCircleCSV(csvFilePath)
+		circleCSV, err := csv.NewCircleCSV(csvFilePath)
 		if err != nil {
 			panic(err)
 		}

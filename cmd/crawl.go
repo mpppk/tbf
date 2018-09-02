@@ -28,7 +28,8 @@ import (
 	"time"
 
 	"github.com/mpppk/tbf/crawl"
-	"github.com/mpppk/tbf/util"
+	"github.com/mpppk/tbf/csv"
+	"github.com/mpppk/tbf/tbf"
 	"github.com/spf13/cobra"
 )
 
@@ -43,7 +44,7 @@ var crawlCmd = &cobra.Command{
 			panic(err)
 		}
 
-		circleCSV, err := util.NewCircleCSV(csvFilePath)
+		circleCSV, err := csv.NewCircleCSV(csvFilePath)
 		if err != nil {
 			panic(err)
 		}
@@ -58,7 +59,7 @@ var crawlCmd = &cobra.Command{
 			panic(err)
 		}
 
-		var filteredCircles []*crawl.Circle
+		var filteredCircles []*tbf.Circle
 		for _, c := range circles {
 			if _, ok := circleDetailMap[c.Space]; !ok {
 				filteredCircles = append(filteredCircles, c)
