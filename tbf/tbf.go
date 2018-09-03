@@ -32,16 +32,23 @@ func NewCircleDetailFromMap(m map[string]string) (*CircleDetail, error) {
 	return &circleDetail, nil
 }
 
-func lineToMap(headers, line []string) (m map[string]string) {
+func lineToMap(headers, line []string) (m map[string]string, err error) {
+	if len(headers) != len(line) {
+		return nil, errors.New(fmt.Sprintf("headers and line length are must be same (len(headers):%d, len(line):%d)", len(headers), len(line)))
+	}
+
 	m = map[string]string{}
 	for i, v := range line {
 		m[headers[i]] = v
 	}
-	return m
+	return m, nil
 }
 
 func LineToCircleDetail(headers, line []string) (*CircleDetail, error) {
-	m := lineToMap(headers, line)
+	m, err := lineToMap(headers, line)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to convert line to map")
+	}
 	return NewCircleDetailFromMap(m)
 }
 
