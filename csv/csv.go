@@ -16,7 +16,8 @@ import (
 )
 
 var URLMap = map[string]string{
-	"tbf4": "https://raw.githubusercontent.com/mpppk/tbf/fetch_csv_via_http/data/tbf4_circles.csv",
+	"latest": "https://raw.githubusercontent.com/mpppk/tbf/master/data/latest_circles.csv",
+	"tbf4":   "https://raw.githubusercontent.com/mpppk/tbf/master/data/tbf4_circles.csv",
 }
 
 type CircleCSV struct {

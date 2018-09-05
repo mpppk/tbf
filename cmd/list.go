@@ -86,7 +86,7 @@ func init() {
 
 	rootCmd.PersistentFlags().String("file", "circles.csv", "circle csv file")
 	viper.BindPFlag("file", rootCmd.PersistentFlags().Lookup("file"))
-	rootCmd.PersistentFlags().String("url", "tbf4", "circle csv file url")
+	rootCmd.PersistentFlags().String("url", "latest", "circle csv file url")
 	viper.BindPFlag("url", rootCmd.PersistentFlags().Lookup("url"))
 
 	// Here you will define your flags and configuration settings.
