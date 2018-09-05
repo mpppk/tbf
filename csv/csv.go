@@ -7,9 +7,17 @@ import (
 	"os"
 	"strings"
 
+	"net/http"
+
+	"io"
+
 	"github.com/mpppk/tbf/tbf"
 	"github.com/pkg/errors"
 )
+
+var URLMap = map[string]string{
+	"tbf4": "https://raw.githubusercontent.com/mpppk/tbf/fetch_csv_via_http/data/tbf4_circles.csv",
+}
 
 type CircleCSV struct {
 	filePath string
@@ -106,4 +114,33 @@ func (c *CircleCSV) ToCircleDetailMap() (m map[string]*tbf.CircleDetail, err err
 		m[circleDetail.Space] = circleDetail
 	}
 	return m, nil
+}
+
+func isExist(filename string) bool {
+	_, err := os.Stat(filename)
+	return err == nil
+}
+
+func DownloadCSVIfDoesNotExist(csvURL, filePath string) (bool, error) {
+	if isExist(filePath) {
+		return false, nil
+	}
+
+	res, err := http.Get(csvURL)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to download CSV from "+csvURL)
+	}
+
+	file, err := os.Create(filePath)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to create csv file to "+filePath)
+	}
+	defer file.Close()
+
+	_, err = io.Copy(file, res.Body)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to write to downloaded csv to "+filePath)
+	}
+
+	return true, nil
 }

@@ -23,10 +23,19 @@ package cmd
 import (
 	"fmt"
 
+	"strings"
+
+	"os"
+
 	"github.com/mpppk/tbf/csv"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
+
+type listConfig struct {
+	url  string
+	file string
+}
 
 // listCmd represents the list command
 var listCmd = &cobra.Command{
@@ -34,7 +43,20 @@ var listCmd = &cobra.Command{
 	Short: "list circle information",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		csvFilePath := viper.GetString("file")
+		config := createConfigFromViper()
+		csvFilePath := config.file
+
+		csvURL, ok := getCSVURL(config.url)
+		if !ok {
+			fmt.Fprintln(os.Stderr, "unknown CSV URL: "+config.url)
+			os.Exit(1)
+		}
+
+		_, err := csv.DownloadCSVIfDoesNotExist(csvURL, csvFilePath)
+		if err != nil {
+			panic(err)
+		}
+
 		circleCSV, err := csv.NewCircleCSV(csvFilePath)
 		if err != nil {
 			panic(err)
@@ -64,6 +86,8 @@ func init() {
 
 	rootCmd.PersistentFlags().String("file", "circles.csv", "circle csv file")
 	viper.BindPFlag("file", rootCmd.PersistentFlags().Lookup("file"))
+	rootCmd.PersistentFlags().String("url", "tbf4", "circle csv file url")
+	viper.BindPFlag("url", rootCmd.PersistentFlags().Lookup("url"))
 
 	// Here you will define your flags and configuration settings.
 
@@ -74,4 +98,22 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// listCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+func createConfigFromViper() *listConfig {
+	return &listConfig{
+		url:  viper.GetString("url"),
+		file: viper.GetString("file"),
+	}
+}
+
+func getCSVURL(url string) (string, bool) {
+	if strings.Contains(url, "http") {
+		return url, true
+	}
+	u, ok := csv.URLMap[url]
+	if ok {
+		return u, true
+	}
+	return "", false
 }
