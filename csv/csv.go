@@ -132,6 +132,11 @@ func DownloadCSVIfDoesNotExist(csvURL, filePath string) (bool, error) {
 		return false, errors.Wrap(err, "failed to download CSV from "+csvURL)
 	}
 
+	if res.StatusCode != 200 {
+		return false, errors.New(
+			fmt.Sprintf("failed to fetch csv from %s: %v", csvURL, res.Status))
+	}
+
 	file, err := os.Create(filePath)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to create csv file to "+filePath)
