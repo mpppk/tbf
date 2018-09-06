@@ -3,7 +3,7 @@
 # Check https://circleci.com/docs/2.0/language-go/ for more details
 version: 2
 jobs:
-  build:
+  test:
     docker:
     # specify the version
     - image: circleci/golang:1.11
@@ -24,6 +24,7 @@ jobs:
     # specify any bash command here prefixed with `run: `
     - run: make setup
     - run: make deps
+    - run: make build
     - run: make test
     - run: make codecov
 
@@ -38,12 +39,15 @@ workflows:
   version: 2
   release:
     jobs:
+    - test
     - release:
         filters:
           branches:
             ignore: /.*/
           tags:
             only: /v[0-9]+(\.[0-9]+)*(-.*)*/
+        requires:
+          - test
 #deployment:
 #  tag:
 #    tag: /v[0-9]+(\.[0-9]+)*(-.*)*/
