@@ -52,7 +52,9 @@ var listCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		_, err := csv.DownloadCSVIfDoesNotExist(csvURL, csvFilePath)
+		csvMetaURL := strings.Replace(csvURL, ".csv", ".json", 1)
+
+		_, err := csv.DownloadLatestCSVIfChanged(csvURL, csvMetaURL, csvFilePath)
 		if err != nil {
 			panic(err)
 		}
