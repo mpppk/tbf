@@ -51,7 +51,8 @@
   revision = "0a134b90aa9fdcaf1e71b21521329e7b8a42c5eb"
 
 [[projects]]
-  digest = "1:a0846f1110e6e1ce905250934cd8c057356cc85333ccf7542337d8a85a3524bc"
+  branch = "master"
+  digest = "1:e62b533550675beee797c3c294e3612e9b2f318766d0cd02eab63459ab5274b3"
   name = "github.com/chromedp/chromedp"
   packages = [
     ".",
@@ -60,8 +61,7 @@
     "runner",
   ]
   pruneopts = "UT"
-  revision = "34591780d9d429c470ccf81a2760c40245fc823a"
-  version = "v0.1.2"
+  revision = "bf52fed0d3e6fc1acb7096f4748fec335fcb5547"
 
 [[projects]]
   digest = "1:2694597a20d303502ad1b7f1cc688977c7dc34da732ccf4d27e98b552cceed5b"

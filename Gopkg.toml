@@ -24,11 +24,6 @@
 #   go-tests = true
 #   unused-packages = true
 
-
-[[constraint]]
-  name = "github.com/chromedp/chromedp"
-  version = "0.1.2"
-
 [[constraint]]
   name = "github.com/fatih/structs"
   version = "1.0.0"
@@ -60,3 +55,7 @@
 [prune]
   go-tests = true
   unused-packages = true
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/chromedp/chromedp"
