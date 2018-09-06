@@ -26,7 +26,7 @@ codecov: deps coverage
 
 .PHONY: build
 build: deps
-	go build
+	go build -o tbfbin
 
 .PHONY: cross-build-snapshot
 cross-build: deps
