@@ -31,7 +31,7 @@ type CircleCSV struct {
 }
 
 type latestCSV struct {
-	Checksum uint32
+	Checksum uint32 `json:"checksum"`
 }
 
 func NewCircleCSV(filePath string) (*CircleCSV, error) {
@@ -147,12 +147,13 @@ func DownloadLatestCSVIfChanged(csvURL, csvMetaURL, filePath string) (bool, erro
 		return false, errors.Wrap(err, "failed to read http response")
 	}
 
-	fmt.Println("latestCSVJsonBytes")
-	fmt.Println(string(latestCSVJsonBytes))
-
 	latestCsv := &latestCSV{}
 	if err = json.Unmarshal(latestCSVJsonBytes, latestCsv); err != nil {
-		return false, errors.Wrap(err, fmt.Sprintf("failed to unmarshal latest csv json from %s", csvMetaURL))
+		return false, errors.Wrap(err,
+			fmt.Sprintf(
+				"failed to unmarshal latest csv json from %s, contents: %s",
+				csvMetaURL,
+				string(latestCSVJsonBytes)))
 	}
 
 	checksum, err := getFileCheckSum(filePath)
