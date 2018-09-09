@@ -30,7 +30,7 @@ type CircleCSV struct {
 	headers  []string
 }
 
-type latestCSV struct {
+type Meta struct {
 	Checksum uint32 `json:"checksum"`
 }
 
@@ -131,29 +131,15 @@ func isExist(filename string) bool {
 	return err == nil
 }
 
-func DownloadLatestCSVIfChanged(csvURL, csvMetaURL, filePath string) (bool, error) {
-	res, err := http.Get(csvMetaURL)
+func DownloadCSVIfChanged(csvURL, csvMetaURL, filePath string) (bool, error) {
+	if !isExist(filePath) {
+		return DownloadCSVIfDoesNotExist(csvURL, filePath)
+	}
+
+	meta, err := readCSVMetaFromHTTP(csvMetaURL)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to get csv from URL: "+csvMetaURL)
-	}
-
-	if res.StatusCode != 200 {
-		return false, errors.New(
-			fmt.Sprintf("failed to fetch csv from %s: invalid statuscode: %v", csvMetaURL, res.Status))
-	}
-
-	latestCSVJsonBytes, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to read http response")
-	}
-
-	latestCsv := &latestCSV{}
-	if err = json.Unmarshal(latestCSVJsonBytes, latestCsv); err != nil {
-		return false, errors.Wrap(err,
-			fmt.Sprintf(
-				"failed to unmarshal latest csv json from %s, contents: %s",
-				csvMetaURL,
-				string(latestCSVJsonBytes)))
+		return false, errors.Wrap(
+			err, fmt.Sprintf("failed to download csv meta data from %s", csvMetaURL))
 	}
 
 	checksum, err := getFileCheckSum(filePath)
@@ -161,11 +147,38 @@ func DownloadLatestCSVIfChanged(csvURL, csvMetaURL, filePath string) (bool, erro
 		return false, errors.Wrap(err, "failed to read csv file")
 	}
 
-	if checksum == latestCsv.Checksum {
+	if checksum == meta.Checksum {
 		return false, nil
 	}
 
 	return DownloadCSVIfDoesNotExist(csvURL, filePath)
+}
+
+func readCSVMetaFromHTTP(csvMetaURL string) (*Meta, error) {
+	res, err := http.Get(csvMetaURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get csv from URL: "+csvMetaURL)
+	}
+
+	if res.StatusCode != 200 {
+		return nil, errors.New(
+			fmt.Sprintf("failed to fetch csv from %s: invalid statuscode: %v", csvMetaURL, res.Status))
+	}
+
+	csvMetaJsonBytes, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read http response")
+	}
+
+	meta := &Meta{}
+	if err = json.Unmarshal(csvMetaJsonBytes, meta); err != nil {
+		return nil, errors.Wrap(err,
+			fmt.Sprintf(
+				"failed to unmarshal latest csv json from %s, contents: %s",
+				csvMetaURL,
+				string(csvMetaJsonBytes)))
+	}
+	return meta, nil
 }
 
 func DownloadCSVIfDoesNotExist(csvURL, filePath string) (bool, error) {

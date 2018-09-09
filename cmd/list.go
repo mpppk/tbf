@@ -27,14 +27,16 @@ import (
 
 	"os"
 
+	"path"
+
 	"github.com/mpppk/tbf/csv"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 type listConfig struct {
-	url  string
-	file string
+	url      string
+	fileName string
 }
 
 // listCmd represents the list command
@@ -43,8 +45,8 @@ var listCmd = &cobra.Command{
 	Short: "list circle information",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		config := createConfigFromViper()
-		csvFilePath := config.file
+		config := createConfigFromSource(viper.GetString("source"))
+		csvFilePath := config.fileName
 
 		csvURL, ok := getCSVURL(config.url)
 		if !ok {
@@ -54,7 +56,7 @@ var listCmd = &cobra.Command{
 
 		csvMetaURL := strings.Replace(csvURL, ".csv", ".json", 1)
 
-		_, err := csv.DownloadLatestCSVIfChanged(csvURL, csvMetaURL, csvFilePath)
+		_, err := csv.DownloadCSVIfChanged(csvURL, csvMetaURL, csvFilePath)
 		if err != nil {
 			panic(err)
 		}
@@ -84,12 +86,8 @@ var listCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(listCmd)
 
-	//rootCmd.PersistentFlags().StringVar(&cfgFile, "file", "", "circle csv file")
-
-	rootCmd.PersistentFlags().String("file", "circles.csv", "circle csv file")
-	viper.BindPFlag("file", rootCmd.PersistentFlags().Lookup("file"))
-	rootCmd.PersistentFlags().String("url", "latest", "circle csv file url")
-	viper.BindPFlag("url", rootCmd.PersistentFlags().Lookup("url"))
+	rootCmd.PersistentFlags().String("source", "circles.csv", "circle data source")
+	viper.BindPFlag("source", rootCmd.PersistentFlags().Lookup("source"))
 
 	// Here you will define your flags and configuration settings.
 
@@ -102,18 +100,24 @@ func init() {
 	// listCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func createConfigFromViper() *listConfig {
+func createConfigFromSource(source string) *listConfig {
+	url, ok := getCSVURL(source)
+	fileName := path.Base(source)
+	if ok {
+		fileName = path.Base(url)
+	}
+
 	return &listConfig{
-		url:  viper.GetString("url"),
-		file: viper.GetString("file"),
+		url:      url,
+		fileName: fileName,
 	}
 }
 
-func getCSVURL(url string) (string, bool) {
-	if strings.Contains(url, "http") {
-		return url, true
+func getCSVURL(source string) (string, bool) {
+	if strings.Contains(source, "http") {
+		return source, true
 	}
-	u, ok := csv.URLMap[url]
+	u, ok := csv.URLMap[source]
 	if ok {
 		return u, true
 	}
