@@ -42,8 +42,17 @@ type listConfig struct {
 // listCmd represents the list command
 var listCmd = &cobra.Command{
 	Use:   "list",
-	Short: "list circle information",
-	Long:  ``,
+	Short: "与えられたソースのサークル情報を表示",
+	Long: `1行に１サークルの情報を以下のフォーマットで表示します。 
+[スペース名] [サークル名] by [ペンネーム]【[ジャンル名]】 : [頒布物説明]
+ソースにはローカルファイル, URL, エイリアスが使用可能です。
+ローカルファイルの例: ./circles.csv
+URLの例: https://raw.githubusercontent.com/mpppk/tbf/master/data/latest_circles.csv
+
+次のエイリアスが利用可能です。
+latest(最新の技術書典サークル情報) → https://raw.githubusercontent.com/mpppk/tbf/master/data/latest_circles.csv
+tbf4(技術書典4サークル情報) → https://raw.githubusercontent.com/mpppk/tbf/master/data/tbf4_circles.csv
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 		config := createConfigFromSource(viper.GetString("source"))
 		csvFilePath := config.fileName
@@ -99,18 +108,8 @@ var listCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(listCmd)
 
-	rootCmd.PersistentFlags().StringP("source", "s", "latest", "circle data source")
-	viper.BindPFlag("source", rootCmd.PersistentFlags().Lookup("source"))
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// listCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// listCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	listCmd.Flags().StringP("source", "s", "latest", "表示するサークル情報のソース(ファイルパスorURLorエイリアス)")
+	viper.BindPFlag("source", listCmd.PersistentFlags().Lookup("source"))
 }
 
 func createConfigFromSource(source string) *listConfig {
