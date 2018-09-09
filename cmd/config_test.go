@@ -32,6 +32,13 @@ func TestCreateConfigFromSource(t *testing.T) {
 				fileName: "test_circles.csv",
 			},
 		},
+		{
+			source: "test_circles.csv",
+			expected: &listConfig{
+				url:      "",
+				fileName: "test_circles.csv",
+			},
+		},
 	}
 
 	for _, c := range cases {

@@ -126,14 +126,14 @@ func (c *CircleCSV) ToCircleDetailMap() (m map[string]*tbf.CircleDetail, err err
 	return m, nil
 }
 
-func isExist(filename string) bool {
+func IsExist(filename string) bool {
 	_, err := os.Stat(filename)
 	return err == nil
 }
 
 func DownloadCSVIfChanged(csvURL, csvMetaURL, filePath string) (bool, error) {
-	if !isExist(filePath) {
-		return DownloadCSVIfDoesNotExist(csvURL, filePath)
+	if !IsExist(filePath) {
+		return downloadCSV(csvURL, filePath)
 	}
 
 	meta, err := readCSVMetaFromHTTP(csvMetaURL)
@@ -151,7 +151,12 @@ func DownloadCSVIfChanged(csvURL, csvMetaURL, filePath string) (bool, error) {
 		return false, nil
 	}
 
-	return DownloadCSVIfDoesNotExist(csvURL, filePath)
+	fmt.Fprintf(
+		os.Stderr,
+		"csv file will be downloaded becase checksums are different between meta(%v) and local file(%v)\n",
+		meta.Checksum,
+		checksum)
+	return downloadCSV(csvURL, filePath)
 }
 
 func readCSVMetaFromHTTP(csvMetaURL string) (*Meta, error) {
@@ -181,11 +186,7 @@ func readCSVMetaFromHTTP(csvMetaURL string) (*Meta, error) {
 	return meta, nil
 }
 
-func DownloadCSVIfDoesNotExist(csvURL, filePath string) (bool, error) {
-	if isExist(filePath) {
-		return false, nil
-	}
-
+func downloadCSV(csvURL, filePath string) (bool, error) {
 	res, err := http.Get(csvURL)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to download CSV from "+csvURL)
@@ -211,7 +212,7 @@ func DownloadCSVIfDoesNotExist(csvURL, filePath string) (bool, error) {
 }
 
 func getFileCheckSum(filePath string) (uint32, error) {
-	if !isExist(filePath) {
+	if !IsExist(filePath) {
 		return 0, errors.New("csv file not found: " + filePath)
 	}
 
