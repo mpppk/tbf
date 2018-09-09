@@ -24,39 +24,51 @@ import (
 	"fmt"
 
 	"context"
-	"log"
 	"time"
+
+	"os"
 
 	"github.com/mpppk/tbf/crawl"
 	"github.com/mpppk/tbf/csv"
 	"github.com/mpppk/tbf/tbf"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
+
+var fileKey = "file"
+var sleepKey = "sleep"
 
 var crawlCmd = &cobra.Command{
 	Use:   "crawl",
-	Short: "A brief description of your command",
-	Long:  ``,
+	Short: "技術書典のウェブサイトをスクレイピングしてcsvとして保存",
+	Long: `技術書典のウェブサイトをスクレイピングし、サークル情報を--fileで指定した名前のcsvとして書き込みます。
+スクレイピングにはchromeを利用するため、実行する環境にあらかじめインストールしておく必要があります。`,
+
 	Run: func(cmd *cobra.Command, args []string) {
-		csvFilePath := "circles.csv"
+		csvFilePath := viper.GetString(fileKey)
+		sleep := time.Duration(viper.GetInt(sleepKey)) * time.Second
 		crawler, err := crawl.NewTBFCrawler(context.Background())
 		if err != nil {
-			panic(err)
+			fmt.Fprintf(os.Stderr, "wait error: %v", err)
+			os.Exit(1)
 		}
 
 		circleCSV, err := csv.NewCircleCSV(csvFilePath)
 		if err != nil {
-			panic(err)
+			fmt.Fprintf(os.Stderr, "failed to prepare csv: %v", err)
+			os.Exit(1)
 		}
 
 		circleDetailMap, err := circleCSV.ToCircleDetailMap()
 		if err != nil {
-			panic(err)
+			fmt.Fprintf(os.Stderr, "failed to parse csv: %v", err)
+			os.Exit(1)
 		}
 
 		circles, err := crawler.FetchCircles(context.Background())
 		if err != nil {
-			panic(err)
+			fmt.Fprintf(os.Stderr, "failed to fetch circle information: %v", err)
+			os.Exit(1)
 		}
 
 		var filteredCircles []*tbf.Circle
@@ -76,23 +88,26 @@ var crawlCmd = &cobra.Command{
 
 			circleDetail, err := crawler.FetchCircleDetail(context.Background(), circle)
 			if err != nil {
-				panic(err)
+				fmt.Fprintf(os.Stderr, "failed to fetch circle detail information: %v", err)
+				os.Exit(1)
 			}
 			fmt.Printf("%#v\n", circleDetail)
 			if err := circleCSV.AppendCircleDetail(circleDetail); err != nil {
 				panic(err)
 			}
-			time.Sleep(10 * time.Second)
+			time.Sleep(sleep)
 		}
 
 		// shutdown chrome
 		if crawler.Shutdown(context.Background()); err != nil {
-			log.Fatal("shutdown error:", err)
+			fmt.Fprintf(os.Stderr, "shutdown error: %v", err)
+			os.Exit(1)
 		}
 
 		// wait for chrome to finish
 		if err := crawler.Wait(); err != nil {
-			log.Fatal("wait error:", err)
+			fmt.Fprintf(os.Stderr, "wait error: %v", err)
+			os.Exit(1)
 		}
 	},
 }
@@ -100,13 +115,9 @@ var crawlCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(crawlCmd)
 
-	// Here you will define your flags and configuration settings.
+	crawlCmd.Flags().StringP(fileKey, "f", "circles.csv", "サークル情報を書き出すcsvファイル名")
+	viper.BindPFlag(fileKey, crawlCmd.PersistentFlags().Lookup(fileKey))
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// crawlCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// crawlCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	crawlCmd.Flags().Int(sleepKey, 10, "スクレイピングのためにHTTPリクエストを送る際のインターバル(秒)")
+	viper.BindPFlag(sleepKey, crawlCmd.PersistentFlags().Lookup(sleepKey))
 }
