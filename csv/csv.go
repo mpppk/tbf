@@ -30,8 +30,8 @@ type CircleCSV struct {
 	headers  []string
 }
 
-type latestCSV struct {
-	Checksum uint32
+type Meta struct {
+	Checksum uint32 `json:"checksum"`
 }
 
 func NewCircleCSV(filePath string) (*CircleCSV, error) {
@@ -126,33 +126,20 @@ func (c *CircleCSV) ToCircleDetailMap() (m map[string]*tbf.CircleDetail, err err
 	return m, nil
 }
 
-func isExist(filename string) bool {
+func IsExist(filename string) bool {
 	_, err := os.Stat(filename)
 	return err == nil
 }
 
-func DownloadLatestCSVIfChanged(csvURL, csvMetaURL, filePath string) (bool, error) {
-	res, err := http.Get(csvMetaURL)
+func DownloadCSVIfChanged(csvURL, csvMetaURL, filePath string) (bool, error) {
+	if !IsExist(filePath) {
+		return downloadCSV(csvURL, filePath)
+	}
+
+	meta, err := readCSVMetaFromHTTP(csvMetaURL)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to get csv from URL: "+csvMetaURL)
-	}
-
-	if res.StatusCode != 200 {
-		return false, errors.New(
-			fmt.Sprintf("failed to fetch csv from %s: invalid statuscode: %v", csvMetaURL, res.Status))
-	}
-
-	latestCSVJsonBytes, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to read http response")
-	}
-
-	fmt.Println("latestCSVJsonBytes")
-	fmt.Println(string(latestCSVJsonBytes))
-
-	latestCsv := &latestCSV{}
-	if err = json.Unmarshal(latestCSVJsonBytes, latestCsv); err != nil {
-		return false, errors.Wrap(err, fmt.Sprintf("failed to unmarshal latest csv json from %s", csvMetaURL))
+		return false, errors.Wrap(
+			err, fmt.Sprintf("failed to download csv meta data from %s", csvMetaURL))
 	}
 
 	checksum, err := getFileCheckSum(filePath)
@@ -160,18 +147,46 @@ func DownloadLatestCSVIfChanged(csvURL, csvMetaURL, filePath string) (bool, erro
 		return false, errors.Wrap(err, "failed to read csv file")
 	}
 
-	if checksum == latestCsv.Checksum {
+	if checksum == meta.Checksum {
 		return false, nil
 	}
 
-	return DownloadCSVIfDoesNotExist(csvURL, filePath)
+	fmt.Fprintf(
+		os.Stderr,
+		"csv file will be downloaded becase checksums are different between meta(%v) and local file(%v)\n",
+		meta.Checksum,
+		checksum)
+	return downloadCSV(csvURL, filePath)
 }
 
-func DownloadCSVIfDoesNotExist(csvURL, filePath string) (bool, error) {
-	if isExist(filePath) {
-		return false, nil
+func readCSVMetaFromHTTP(csvMetaURL string) (*Meta, error) {
+	res, err := http.Get(csvMetaURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get csv from URL: "+csvMetaURL)
 	}
 
+	if res.StatusCode != 200 {
+		return nil, errors.New(
+			fmt.Sprintf("failed to fetch csv from %s: invalid statuscode: %v", csvMetaURL, res.Status))
+	}
+
+	csvMetaJsonBytes, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read http response")
+	}
+
+	meta := &Meta{}
+	if err = json.Unmarshal(csvMetaJsonBytes, meta); err != nil {
+		return nil, errors.Wrap(err,
+			fmt.Sprintf(
+				"failed to unmarshal latest csv json from %s, contents: %s",
+				csvMetaURL,
+				string(csvMetaJsonBytes)))
+	}
+	return meta, nil
+}
+
+func downloadCSV(csvURL, filePath string) (bool, error) {
 	res, err := http.Get(csvURL)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to download CSV from "+csvURL)
@@ -197,7 +212,7 @@ func DownloadCSVIfDoesNotExist(csvURL, filePath string) (bool, error) {
 }
 
 func getFileCheckSum(filePath string) (uint32, error) {
-	if !isExist(filePath) {
+	if !IsExist(filePath) {
 		return 0, errors.New("csv file not found: " + filePath)
 	}
 

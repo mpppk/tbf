@@ -25,6 +25,8 @@ import (
 
 	"strings"
 
+	"path"
+
 	"os"
 
 	"github.com/mpppk/tbf/csv"
@@ -33,8 +35,8 @@ import (
 )
 
 type listConfig struct {
-	url  string
-	file string
+	url      string
+	fileName string
 }
 
 // listCmd represents the list command
@@ -43,30 +45,43 @@ var listCmd = &cobra.Command{
 	Short: "list circle information",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		config := createConfigFromViper()
-		csvFilePath := config.file
+		config := createConfigFromSource(viper.GetString("source"))
+		csvFilePath := config.fileName
 
-		csvURL, ok := getCSVURL(config.url)
-		if !ok {
-			fmt.Fprintln(os.Stderr, "unknown CSV URL: "+config.url)
+		if config.url != "" {
+			csvURL, ok := getCSVURL(config.url)
+			if !ok {
+				fmt.Fprintln(os.Stderr, "unknown CSV URL: "+config.url)
+				os.Exit(1)
+			}
+
+			csvMetaURL := strings.Replace(csvURL, ".csv", ".json", 1)
+
+			downloaded, err := csv.DownloadCSVIfChanged(csvURL, csvMetaURL, csvFilePath)
+			if err != nil {
+				panic(err)
+			}
+
+			if downloaded {
+				fmt.Fprintf(os.Stderr, "new csv file is downloaded from %s to %s\n", csvURL, csvFilePath)
+			}
+		} else if !csv.IsExist(config.fileName) {
+			fmt.Fprintf(os.Stderr, "csv file not found: %s\n", csvFilePath)
 			os.Exit(1)
-		}
-
-		csvMetaURL := strings.Replace(csvURL, ".csv", ".json", 1)
-
-		_, err := csv.DownloadLatestCSVIfChanged(csvURL, csvMetaURL, csvFilePath)
-		if err != nil {
-			panic(err)
 		}
 
 		circleCSV, err := csv.NewCircleCSV(csvFilePath)
 		if err != nil {
-			panic(err)
+			fmt.Fprintln(os.Stderr, "failed to load csv from: "+config.url)
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
 		}
 
 		circleDetailMap, err := circleCSV.ToCircleDetailMap()
 		if err != nil {
-			panic(err)
+			fmt.Fprintln(os.Stderr, "failed to parse csv from: "+config.url)
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
 		}
 
 		for space, circleDetail := range circleDetailMap {
@@ -84,12 +99,8 @@ var listCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(listCmd)
 
-	//rootCmd.PersistentFlags().StringVar(&cfgFile, "file", "", "circle csv file")
-
-	rootCmd.PersistentFlags().String("file", "circles.csv", "circle csv file")
-	viper.BindPFlag("file", rootCmd.PersistentFlags().Lookup("file"))
-	rootCmd.PersistentFlags().String("url", "latest", "circle csv file url")
-	viper.BindPFlag("url", rootCmd.PersistentFlags().Lookup("url"))
+	rootCmd.PersistentFlags().StringP("source", "s", "latest", "circle data source")
+	viper.BindPFlag("source", rootCmd.PersistentFlags().Lookup("source"))
 
 	// Here you will define your flags and configuration settings.
 
@@ -102,18 +113,24 @@ func init() {
 	// listCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func createConfigFromViper() *listConfig {
+func createConfigFromSource(source string) *listConfig {
+	url, ok := getCSVURL(source)
+	fileName := path.Base(source)
+	if ok {
+		fileName = path.Base(url)
+	}
+
 	return &listConfig{
-		url:  viper.GetString("url"),
-		file: viper.GetString("file"),
+		url:      url,
+		fileName: fileName,
 	}
 }
 
-func getCSVURL(url string) (string, bool) {
-	if strings.Contains(url, "http") {
-		return url, true
+func getCSVURL(source string) (string, bool) {
+	if strings.Contains(source, "http") {
+		return source, true
 	}
-	u, ok := csv.URLMap[url]
+	u, ok := csv.URLMap[source]
 	if ok {
 		return u, true
 	}
