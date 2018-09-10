@@ -36,6 +36,7 @@ import (
 )
 
 var fileKey = "file"
+var urlKey = "url"
 var sleepKey = "sleep"
 
 var crawlCmd = &cobra.Command{
@@ -46,8 +47,9 @@ var crawlCmd = &cobra.Command{
 
 	Run: func(cmd *cobra.Command, args []string) {
 		csvFilePath := viper.GetString(fileKey)
+		circlesURL := viper.GetString(urlKey)
 		sleep := time.Duration(viper.GetInt(sleepKey)) * time.Second
-		crawler, err := crawl.NewTBFCrawler(context.Background())
+		crawler, err := crawl.NewTBFCrawler(context.Background(), tbf.BaseURL)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "wait error: %v", err)
 			os.Exit(1)
@@ -65,7 +67,7 @@ var crawlCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		circles, err := crawler.FetchCircles(context.Background())
+		circles, err := crawler.FetchCircles(context.Background(), circlesURL)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "failed to fetch circle information: %v", err)
 			os.Exit(1)
@@ -117,6 +119,9 @@ func init() {
 
 	crawlCmd.Flags().StringP(fileKey, "f", "circles.csv", "サークル情報を書き出すcsvファイル名")
 	viper.BindPFlag(fileKey, crawlCmd.Flags().Lookup(fileKey))
+
+	crawlCmd.Flags().StringP(urlKey, "u", "https://techbookfest.org/event/tbf05/circle", "サークル情報を取得するURL")
+	viper.BindPFlag(urlKey, crawlCmd.Flags().Lookup(urlKey))
 
 	crawlCmd.Flags().Int(sleepKey, 10, "スクレイピングのためにHTTPリクエストを送る際のインターバル(秒)")
 	viper.BindPFlag(sleepKey, crawlCmd.Flags().Lookup(sleepKey))
