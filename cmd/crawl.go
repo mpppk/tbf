@@ -116,8 +116,8 @@ func init() {
 	rootCmd.AddCommand(crawlCmd)
 
 	crawlCmd.Flags().StringP(fileKey, "f", "circles.csv", "サークル情報を書き出すcsvファイル名")
-	viper.BindPFlag(fileKey, crawlCmd.PersistentFlags().Lookup(fileKey))
+	viper.BindPFlag(fileKey, crawlCmd.Flags().Lookup(fileKey))
 
 	crawlCmd.Flags().Int(sleepKey, 10, "スクレイピングのためにHTTPリクエストを送る際のインターバル(秒)")
-	viper.BindPFlag(sleepKey, crawlCmd.PersistentFlags().Lookup(sleepKey))
+	viper.BindPFlag(sleepKey, crawlCmd.Flags().Lookup(sleepKey))
 }

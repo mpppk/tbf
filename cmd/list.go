@@ -25,19 +25,13 @@ import (
 
 	"strings"
 
-	"path"
-
 	"os"
 
 	"github.com/mpppk/tbf/csv"
+	"github.com/mpppk/tbf/tbf"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
-
-type listConfig struct {
-	url      string
-	fileName string
-}
 
 // listCmd represents the list command
 var listCmd = &cobra.Command{
@@ -54,13 +48,13 @@ latest(最新の技術書典サークル情報) → https://raw.githubuserconten
 tbf4(技術書典4サークル情報) → https://raw.githubusercontent.com/mpppk/tbf/master/data/tbf4_circles.csv
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		config := createConfigFromSource(viper.GetString("source"))
-		csvFilePath := config.fileName
+		source := tbf.NewSource(viper.GetString("source"))
+		csvFilePath := source.FileName
 
-		if config.url != "" {
-			csvURL, ok := getCSVURL(config.url)
+		if source.Url != "" {
+			csvURL, ok := tbf.GetCSVURL(source.Url)
 			if !ok {
-				fmt.Fprintln(os.Stderr, "unknown CSV URL: "+config.url)
+				fmt.Fprintln(os.Stderr, "unknown CSV URL: "+source.Url)
 				os.Exit(1)
 			}
 
@@ -74,21 +68,21 @@ tbf4(技術書典4サークル情報) → https://raw.githubusercontent.com/mppp
 			if downloaded {
 				fmt.Fprintf(os.Stderr, "new csv file is downloaded from %s to %s\n", csvURL, csvFilePath)
 			}
-		} else if !csv.IsExist(config.fileName) {
+		} else if !csv.IsExist(source.FileName) {
 			fmt.Fprintf(os.Stderr, "csv file not found: %s\n", csvFilePath)
 			os.Exit(1)
 		}
 
 		circleCSV, err := csv.NewCircleCSV(csvFilePath)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "failed to load csv from: "+config.url)
+			fmt.Fprintln(os.Stderr, "failed to load csv from: "+source.Url)
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
 
 		circleDetailMap, err := circleCSV.ToCircleDetailMap()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "failed to parse csv from: "+config.url)
+			fmt.Fprintln(os.Stderr, "failed to parse csv from: "+source.Url)
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
@@ -109,29 +103,5 @@ func init() {
 	rootCmd.AddCommand(listCmd)
 
 	listCmd.Flags().StringP("source", "s", "latest", "表示するサークル情報のソース(ファイルパスorURLorエイリアス)")
-	viper.BindPFlag("source", listCmd.PersistentFlags().Lookup("source"))
-}
-
-func createConfigFromSource(source string) *listConfig {
-	url, ok := getCSVURL(source)
-	fileName := path.Base(source)
-	if ok {
-		fileName = path.Base(url)
-	}
-
-	return &listConfig{
-		url:      url,
-		fileName: fileName,
-	}
-}
-
-func getCSVURL(source string) (string, bool) {
-	if strings.Contains(source, "http") {
-		return source, true
-	}
-	u, ok := csv.URLMap[source]
-	if ok {
-		return u, true
-	}
-	return "", false
+	viper.BindPFlag("source", listCmd.Flags().Lookup("source"))
 }

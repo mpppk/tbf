@@ -28,6 +28,7 @@ import (
 	"encoding/json"
 
 	"github.com/mpppk/tbf/csv"
+	"github.com/mpppk/tbf/tbf"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -35,14 +36,17 @@ import (
 // describeCmd represents the describe command
 var describeCmd = &cobra.Command{
 	Use:   "describe",
-	Short: "A brief description of your command",
-	Long:  ``,
-	Args:  cobra.MinimumNArgs(1),
+	Short: "サークル情報を表示します",
+	Long: `引数として与えられたスペース名のサークル情報をjsonで表示します
+ex)
+$ tbf describe あ01
+`,
+	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		spaces := args
 
-		csvFilePath := viper.GetString("file")
-		circleCSV, err := csv.NewCircleCSV(csvFilePath)
+		source := tbf.NewSource(viper.GetString("source"))
+		circleCSV, err := csv.NewCircleCSV(source.FileName)
 		if err != nil {
 			panic(err)
 		}
@@ -72,15 +76,6 @@ var describeCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(describeCmd)
 
-	describeCmd.PersistentFlags().String("file", "circles.csv", "circle csv file")
-	viper.BindPFlag("file", describeCmd.PersistentFlags().Lookup("file"))
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// describeCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// describeCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	describeCmd.Flags().StringP("source", "s", "latest", "表示するサークル情報のソース(ファイルパスorURLorエイリアス)")
+	viper.BindPFlag("source", listCmd.Flags().Lookup("source"))
 }
