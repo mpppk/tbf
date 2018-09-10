@@ -35,8 +35,6 @@ var rootCmd = &cobra.Command{
 	Use:   "tbf",
 	Short: "CLI for tech book festival",
 	Long:  `技術書典(https://techbookfest.org)のサークル情報を収集/表示するためのCLIです。`,
-	Run: func(cmd *cobra.Command, args []string) {
-	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
