@@ -13,27 +13,25 @@ import (
 )
 
 type TBFCrawler struct {
-	browser    *chromedp.CDP
-	baseURL    string
-	circlesURL string
+	browser *chromedp.CDP
+	baseURL string
 }
 
-func NewTBFCrawler(ctx context.Context) (*TBFCrawler, error) {
+func NewTBFCrawler(ctx context.Context, baseURL string) (*TBFCrawler, error) {
 	c, err := chromedp.New(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "chromedep new error:")
 	}
 	return &TBFCrawler{
-		browser:    c,
-		baseURL:    `https://techbookfest.org`,
-		circlesURL: `https://techbookfest.org/event/tbf05/circle`,
+		browser: c,
+		baseURL: baseURL,
 	}, nil
 }
 
-func (t *TBFCrawler) FetchCircles(ctx context.Context) ([]*tbf.Circle, error) {
+func (t *TBFCrawler) FetchCircles(ctx context.Context, circlesURL string) ([]*tbf.Circle, error) {
 	var circles []*tbf.Circle
 	err := t.browser.Run(ctx, chromedp.Tasks{
-		chromedp.Navigate(t.circlesURL),
+		chromedp.Navigate(circlesURL),
 		chromedp.WaitVisible(`li.circle-list-item`),
 		chromedp.Evaluate(
 			`Array.from(document.querySelectorAll('li.circle-list-item')).map((l) => ({detailUrl: l.querySelector('a.circle-list-item-link').getAttribute('href'), space: l.querySelector('span.circle-space-label').textContent, name: l.querySelector('span.circle-name').textContent, penname: l.querySelector('p.circle-list-item-penname').textContent, genre: l.querySelector('p.circle-list-item-genre').textContent}))`,
@@ -41,7 +39,7 @@ func (t *TBFCrawler) FetchCircles(ctx context.Context) ([]*tbf.Circle, error) {
 		),
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("failed to fetch circles from %v", t.circlesURL))
+		return nil, errors.Wrap(err, fmt.Sprintf("failed to fetch circles from %v", circlesURL))
 	}
 
 	return circles, nil

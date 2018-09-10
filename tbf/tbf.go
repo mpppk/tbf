@@ -17,6 +17,8 @@ var URLMap = map[string]string{
 	"tbf4":   "https://raw.githubusercontent.com/mpppk/tbf/master/data/tbf4_circles.csv",
 }
 
+var BaseURL = "https://techbookfest.org"
+
 type Circle struct {
 	DetailURL string
 	Space     string
