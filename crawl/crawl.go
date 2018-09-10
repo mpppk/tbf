@@ -26,7 +26,7 @@ func NewTBFCrawler(ctx context.Context) (*TBFCrawler, error) {
 	return &TBFCrawler{
 		browser:    c,
 		baseURL:    `https://techbookfest.org`,
-		circlesURL: `https://techbookfest.org/event/tbf04/circle`,
+		circlesURL: `https://techbookfest.org/event/tbf05/circle`,
 	}, nil
 }
 

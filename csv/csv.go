@@ -20,11 +20,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-var URLMap = map[string]string{
-	"latest": "https://raw.githubusercontent.com/mpppk/tbf/master/data/latest_circles.csv",
-	"tbf4":   "https://raw.githubusercontent.com/mpppk/tbf/master/data/tbf4_circles.csv",
-}
-
 type CircleCSV struct {
 	filePath string
 	headers  []string

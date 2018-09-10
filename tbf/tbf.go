@@ -3,10 +3,19 @@ package tbf
 import (
 	"fmt"
 
+	"path"
+
+	"strings"
+
 	"github.com/fatih/structs"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 )
+
+var URLMap = map[string]string{
+	"latest": "https://raw.githubusercontent.com/mpppk/tbf/master/data/latest_circles.csv",
+	"tbf4":   "https://raw.githubusercontent.com/mpppk/tbf/master/data/tbf4_circles.csv",
+}
 
 type Circle struct {
 	DetailURL string
@@ -88,4 +97,33 @@ func CircleDetailToLine(headers []string, circleDetail *CircleDetail) ([]string,
 		return nil, errors.Wrap(err, "failed to convert circle detail struct to line")
 	}
 	return line, nil
+}
+
+type Source struct {
+	Url      string
+	FileName string
+}
+
+func NewSource(sourcePath string) *Source {
+	url, ok := GetCSVURL(sourcePath)
+	fileName := path.Base(sourcePath)
+	if ok {
+		fileName = path.Base(url)
+	}
+
+	return &Source{
+		Url:      url,
+		FileName: fileName,
+	}
+}
+
+func GetCSVURL(source string) (string, bool) {
+	if strings.Contains(source, "http") {
+		return source, true
+	}
+	u, ok := URLMap[source]
+	if ok {
+		return u, true
+	}
+	return "", false
 }
