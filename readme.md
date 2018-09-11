@@ -9,6 +9,22 @@ pecoやfzfなどのfuzzy finderと組み合わせることでサークル情報�
 
 ![](https://i.gyazo.com/8bd958b53fdc3e140f5bbe6b354c8194.gif)
 
+# Installation
+
+## binary
+Download from [GitHub Releases](https://github.com/mpppk/tbf/releases)
+
+## brew
+
+[TODO]
+
+## From source
+
+```Shell
+$ go get github.com/mpppk/tbf
+```
+
+
 # Usage
 ## tbf list
 技術書典ウェブサイトをクロールした結果のcsvやURLから、サークル情報を表示します。 
@@ -27,27 +43,53 @@ new csv file is downloaded from https://raw.githubusercontent.com/mpppk/tbf/mast
 ```
 
 ### Tips: fuzzy finderで絞り込んだサークル詳細ページをブラウザで表示する
-#### peco (ctrl + spaceで複数選択)
+あらかじめpeco/fzfなどのfuzzy finderとjqをインストールしておく必要があります。
+
+#### mac + peco (ctrl + spaceで複数選択)
 
 ```
 tbf list | peco | awk '{print $1}' | xargs tbf describe | jq -r .DetailURL | xargs open
 ```
 
-#### fzf (tabで複数選択)
+#### mac + fzf (tabで複数選択)
 
 ```
 tbf list | fzf -m | awk '{print $1}' | xargs tbf describe | jq -r .DetailURL | xargs open
 ```
 
+#### linux + peco (ctrl + spaceで複数選択)
+
+```
+tbf list | peco | awk '{print $1}' | xargs tbf describe | jq -r .DetailURL | xargs xdg-open
+```
+
+#### linux + fzf (tabで複数選択)
+
+```
+tbf list | fzf -m | awk '{print $1}' | xargs tbf describe | jq -r .DetailURL | xargs xdg-open
+```
+
+#### windows + peco (ctrl + spaceで複数選択)
+
+```
+TODO
+```
+
+#### windows + fzf (tabで複数選択)
+
+```
+TODO
+```
+
 ### Tips: fuzzy finderで絞り込んだサークルのサイトをブラウザで表示する
 
-#### peco (ctrl + spaceで複数選択)
+#### mac + peco (ctrl + spaceで複数選択)
 
 ```
 tbf list | peco | awk '{print $1}' | xargs tbf describe | jq -r .WebURL | xargs open
 ```
 
-#### fzf (tabで複数選択)
+#### mac + fzf (tabで複数選択)
 
 ```
 tbf list | fzf -m | awk '{print $1}' | xargs tbf describe | jq -r .WebURL | xargs open
@@ -72,4 +114,3 @@ $ tbf describe あ01 あ02
 $ tbf crawl
 # → ウェブサイトをクローリングし、結果をcircles.csvという名前で保存する
 ```
-
