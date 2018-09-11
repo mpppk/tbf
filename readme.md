@@ -39,15 +39,15 @@ tbf list | peco | awk '{print $1}' | xargs tbf describe | jq -r .DetailURL | xar
 tbf list | fzf -m | awk '{print $1}' | xargs tbf describe | jq -r .DetailURL | xargs open
 ```
 
-## fuzzy finderで絞り込んだサークルのサイトをブラウザで表示する
+### Tips: fuzzy finderで絞り込んだサークルのサイトをブラウザで表示する
 
-## peco (ctrl + spaceで複数選択)
+#### peco (ctrl + spaceで複数選択)
 
 ```
 tbf list | peco | awk '{print $1}' | xargs tbf describe | jq -r .WebURL | xargs open
 ```
 
-### fzf (tabで複数選択)
+#### fzf (tabで複数選択)
 
 ```
 tbf list | fzf -m | awk '{print $1}' | xargs tbf describe | jq -r .WebURL | xargs open
@@ -62,7 +62,6 @@ $ tbf describe あ01 あ02
 {"DetailURL":"https:/techbookfest.org/event/tbf05/circle/28360002","Space":"あ02","Name":"いしだ け（イシダケ）","Penname":"t_ishida,コンドウアヤ","Genre":"ソフトウェア全般","ImageURL":"https://lh3.googleusercontent.com/DT5P_6OcobmPWDzVnu1loCAt_DDrcmQ8P2Y5hE3RWoRb6Fx-4dcuA7U3oPP3yQyAXr3FzH-6Jc8_iI5Z_1Pp","WebURL":"http://www.dezapatan.com","GenreFreeFormat":"体系的なプログラミング制作 を目指してPHPで緩く解説しています"}
 
 ```
-
 
 ## tbf crawl
  chromeを起動して技術書典ウェブサイトからサークル情報をクローリングし、csvとして保存します。  
