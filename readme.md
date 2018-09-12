@@ -81,6 +81,15 @@ TODO
 TODO
 ```
 
+#### docker(URLの表示のみ)
+
+```
+$ docker run -it --rm mpppk/tbf list_circle_url
+https:/techbookfest.org/event/tbf05/circle/47030001
+https:/techbookfest.org/event/tbf05/circle/35050003
+https:/techbookfest.org/event/tbf05/circle/45010003
+```
+
 ### Tips: fuzzy finderで絞り込んだサークルのサイトをブラウザで表示する
 
 #### mac + peco (ctrl + spaceで複数選択)

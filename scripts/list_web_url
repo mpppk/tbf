@@ -1,0 +1,2 @@
+#!/bin/sh
+tbf list | fzf -m | awk '{print $1}' | xargs tbf describe | jq -r .WebURL
