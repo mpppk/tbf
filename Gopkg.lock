@@ -300,6 +300,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/chromedp/cdproto/cdp",
     "github.com/chromedp/chromedp",
     "github.com/fatih/structs",
     "github.com/kylelemons/godebug/pretty",
