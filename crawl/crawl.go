@@ -2,14 +2,14 @@ package crawl
 
 import (
 	"context"
+	"log"
 
 	"fmt"
 
-	"path"
-
 	"strings"
 
-	"github.com/chromedp/cdproto/cdp"
+	"path"
+
 	"github.com/chromedp/chromedp"
 	"github.com/mpppk/tbf/tbf"
 	"github.com/pkg/errors"
@@ -56,7 +56,7 @@ func NewCirclesTasksResult() *circlesTasksResult {
 }
 
 func NewTBFCrawler(ctx context.Context, baseURL string) (*TBFCrawler, error) {
-	c, err := chromedp.New(ctx)
+	c, err := chromedp.New(ctx, chromedp.WithLog(log.Printf))
 	if err != nil {
 		return nil, errors.Wrap(err, "chromedep new error:")
 	}
@@ -77,7 +77,7 @@ func (t *TBFCrawler) getFetchCirclesTasks(circlesURL string) (chromedp.Tasks, *c
 
 	return chromedp.Tasks{
 		chromedp.Navigate(circlesURL),
-		chromedp.WaitVisible(`li.circle-list-item`, chromedp.AtLeast(100)), // FIXME
+		chromedp.WaitVisible(`li.circle-list-item`, chromedp.AtLeast(200)), // FIXME
 		AttributeValueAll(detailUrlsSel, "href", &(circlesTasksResult.detailUrls), nil, chromedp.ByQueryAll),
 		Texts(circleSpacesSel, &(circlesTasksResult.spaces), chromedp.ByQueryAll),
 		Texts(circleNamesSel, &(circlesTasksResult.names), chromedp.ByQueryAll),
@@ -97,118 +97,41 @@ func (t *TBFCrawler) FetchCircles(ctx context.Context, circlesURL string) ([]*tb
 	return circles, errors.Wrap(err, "error occurred after circles are fetched")
 }
 
-func (t *TBFCrawler) fetchAttributeValue(ctx context.Context, sel interface{}, name string) (attributeValue string, err error) {
-	var ok bool
-	if err := t.browser.Run(ctx, chromedp.AttributeValue(sel, "src", &attributeValue, &ok)); err != nil {
-		return "", errors.Wrapf(err, "failed to fetch image src from %s", sel)
-	}
-	if !ok {
-		return "", fmt.Errorf("target DOM not found: %s", sel)
-	}
-	return
-}
-
-func (t *TBFCrawler) fetchAttributeValues(ctx context.Context, sel interface{}, name string) ([]string, error) {
-	var attributeMaps []map[string]string
-	if err := t.browser.Run(ctx, chromedp.AttributesAll(sel, &attributeMaps, chromedp.ByQueryAll)); err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch attributes from %q", sel)
-	}
-
-	values, err := mapsToSliceByKey(attributeMaps, name)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to extract attribute(%s) from nodes that fetched by %q", name, sel)
-	}
-	return values, nil
-}
-
-func (t *TBFCrawler) fetchText(ctx context.Context, sel interface{}) (text string, err error) {
-	if err := t.browser.Run(ctx, chromedp.Text(sel, &text)); err != nil {
-		return "", errors.Wrapf(err, "failed to fetch text from %q", sel)
-	}
-	return
-}
-
-func (t *TBFCrawler) fetchNodes(ctx context.Context, sel interface{}) (nodes []*cdp.Node, err error) {
-	if err := t.browser.Run(ctx,
-		chromedp.Nodes(sel, &nodes, chromedp.ByQueryAll),
-	); err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch node from %q", sel)
-	}
-	return
-}
-
-func (t *TBFCrawler) getNavigateToCircleDetailTasks(circleDetailURL string) chromedp.Tasks {
-	return chromedp.Tasks{
-		chromedp.Navigate(fmt.Sprintf("%s/%s", t.baseURL, circleDetailURL)),
-		chromedp.WaitVisible(`mat-card-content.mat-card-content`),
-	}
-}
-
-func (t *TBFCrawler) FetchCircleDetail(ctx context.Context, circle *tbf.Circle) (*tbf.CircleDetail, error) {
-	if err := t.browser.Run(ctx, t.getNavigateToCircleDetailTasks(circle.DetailURL)); err != nil {
-		return nil, errors.Wrapf(err, "failed to navigate to %s", circle.DetailURL)
-	}
-
+func (t *TBFCrawler) getFetchCircleDetailTasks(circleDetailURL string) (chromedp.Tasks, *tbf.CircleDetail) {
+	circleDetail := &tbf.CircleDetail{}
 	circleDetailCardSel := "mat-card.circle-detail-card"
 	circleDetailTableSel := joinSelectors(circleDetailCardSel, "tbody")
 	tableQueryTmpl := "tr:nth-of-type(%d)>td:nth-of-type(2)"
 
 	circleImageSel := joinSelectors(circleDetailCardSel, "div.circle-detail-image>img")
-	imageURL, err := t.fetchAttributeValue(ctx, circleImageSel, "src")
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch detail of circle: %#v", circle)
-	}
-
 	circleNameSel := joinSelectors(circleDetailTableSel, "span.circle-name")
-	name, err := t.fetchText(ctx, circleNameSel)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch circle name from %q", circleNameSel)
-	}
-
 	circleSpaceSel := joinSelectors(circleDetailTableSel, fmt.Sprintf(tableQueryTmpl, 2))
-	space, err := t.fetchText(ctx, circleSpaceSel)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch circle space from %q", circleSpaceSel)
-	}
-
 	circlePennameSel := joinSelectors(circleDetailTableSel, fmt.Sprintf(tableQueryTmpl, 3))
-	penname, err := t.fetchText(ctx, circlePennameSel)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch circle penname from %q", circlePennameSel)
-	}
-
 	circleWebURLSel := joinSelectors(circleDetailTableSel, fmt.Sprintf(tableQueryTmpl, 4), "a")
-	webURL, err := t.fetchText(ctx, circleWebURLSel)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch circle web URL from %q", circleWebURLSel)
-	}
-
 	circleGenreSel := joinSelectors(circleDetailTableSel, fmt.Sprintf(tableQueryTmpl, 5))
-	genre, err := t.fetchText(ctx, circleGenreSel)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch circle genre from %q", circleGenreSel)
-	}
-
 	circleGenreFreeFormatSel := joinSelectors(circleDetailTableSel, fmt.Sprintf(tableQueryTmpl, 6))
-	genreFreeFormat, err := t.fetchText(ctx, circleGenreFreeFormatSel)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch circle genre free format from %q", circleGenreFreeFormatSel)
+
+	return chromedp.Tasks{
+		chromedp.Navigate(fmt.Sprintf("%s/%s", t.baseURL, circleDetailURL)),
+		chromedp.WaitVisible(`mat-card-content.mat-card-content`),
+		chromedp.AttributeValue(circleImageSel, "src", &(circleDetail.ImageURL), nil, chromedp.ByQueryAll),
+		chromedp.Text(circleNameSel, &(circleDetail.Circle.Name), chromedp.ByQueryAll),
+		chromedp.Text(circleSpaceSel, &(circleDetail.Circle.Space), chromedp.ByQueryAll),
+		chromedp.Text(circlePennameSel, &(circleDetail.Circle.Penname), chromedp.ByQueryAll),
+		chromedp.Text(circleWebURLSel, &(circleDetail.WebURL), chromedp.ByQueryAll),
+		chromedp.Text(circleGenreSel, &(circleDetail.Circle.Genre), chromedp.ByQueryAll),
+		chromedp.Text(circleGenreFreeFormatSel, &(circleDetail.GenreFreeFormat), chromedp.ByQueryAll),
+	}, circleDetail
+}
+
+func (t *TBFCrawler) FetchCircleDetail(ctx context.Context, circle *tbf.Circle) (*tbf.CircleDetail, error) {
+	tasks, circleDetail := t.getFetchCircleDetailTasks(circle.DetailURL)
+	if err := t.browser.Run(ctx, tasks); err != nil {
+		return nil, errors.Wrapf(err, "failed to navigate to %s", circle.DetailURL)
 	}
 
-	circleDetail := &tbf.CircleDetail{
-		Circle: tbf.Circle{
-			Name:      name,
-			Space:     space,
-			DetailURL: path.Join(t.baseURL, circle.DetailURL),
-			Penname:   penname,
-			Genre:     genre,
-		},
-		ImageURL:        imageURL,
-		WebURL:          webURL,
-		GenreFreeFormat: genreFreeFormat,
-	}
-
-	return circleDetail, err
+	circleDetail.DetailURL = path.Join(t.baseURL, circle.DetailURL)
+	return circleDetail, nil
 }
 
 func (t *TBFCrawler) Shutdown(ctx context.Context) error {
@@ -221,17 +144,6 @@ func (t *TBFCrawler) Wait() error {
 
 func joinSelectors(selectors ...string) string {
 	return strings.Join(selectors, " ")
-}
-
-func mapsToSliceByKey(ms []map[string]string, key string) (values []string, err error) {
-	for _, m := range ms {
-		v, ok := m[key]
-		if !ok {
-			return nil, errors.New(fmt.Sprintf("failed to get value of %q from %v", key, m))
-		}
-		values = append(values, v)
-	}
-	return
 }
 
 func fetchResultToCircles(res *circlesTasksResult) (circles []*tbf.Circle, err error) {
