@@ -20,6 +20,8 @@ func Texts(sel interface{}, texts *[]string, opts ...chromedp.QueryOption) chrom
 		}
 
 		for _, node := range nodes {
+			node.RLock()
+			defer node.RUnlock()
 			t := ""
 			for _, c := range node.Children {
 				if c.NodeType == cdp.NodeTypeText {
