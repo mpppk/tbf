@@ -6,6 +6,8 @@ import (
 
 	"path"
 
+	"fmt"
+
 	"github.com/chromedp/chromedp"
 	"github.com/mpppk/tbf/tbf"
 	"github.com/pkg/errors"
@@ -39,7 +41,7 @@ func (t *TBFCrawler) FetchCircles(ctx context.Context, circlesURL string) ([]*tb
 }
 
 func (t *TBFCrawler) FetchCircleDetail(ctx context.Context, circle *tbf.Circle) (*tbf.CircleDetail, error) {
-	tasks, circleDetail := circlesDetailFetchingTasks(circle.DetailURL)
+	tasks, circleDetail := circlesDetailFetchingTasks(fmt.Sprintf("%s/%s", t.baseURL, circle.DetailURL))
 	if err := t.browser.Run(ctx, tasks); err != nil {
 		return nil, errors.Wrapf(err, "failed to navigate to %s", circle.DetailURL)
 	}

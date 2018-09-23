@@ -62,7 +62,7 @@ func circlesFetchingTasks(circlesURL string) (chromedp.Tasks, *circlesTasksResul
 	}, circlesTasksResult
 }
 
-func circlesDetailFetchingTasks(circleDetailURL string) (chromedp.Tasks, *tbf.CircleDetail) {
+func circlesDetailFetchingTasks(fullCircleDetailURL string) (chromedp.Tasks, *tbf.CircleDetail) {
 	circleDetail := &tbf.CircleDetail{}
 	circleDetailCardSel := "mat-card.circle-detail-card"
 	circleDetailTableSel := joinSelectors(circleDetailCardSel, "tbody")
@@ -77,7 +77,7 @@ func circlesDetailFetchingTasks(circleDetailURL string) (chromedp.Tasks, *tbf.Ci
 	circleGenreFreeFormatSel := joinSelectors(circleDetailTableSel, fmt.Sprintf(tableQueryTmpl, 6))
 
 	return chromedp.Tasks{
-		chromedp.Navigate(fmt.Sprintf("%s/%s", t.baseURL, circleDetailURL)),
+		chromedp.Navigate(fullCircleDetailURL),
 		chromedp.WaitVisible(`mat-card-content.mat-card-content`),
 		chromedp.AttributeValue(circleImageSel, "src", &(circleDetail.ImageURL), nil, chromedp.ByQueryAll),
 		chromedp.Text(circleNameSel, &(circleDetail.Circle.Name), chromedp.ByQueryAll),
