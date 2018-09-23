@@ -1,24 +1,12 @@
 package crawl
 
 import (
-	"context"
-	"log"
-
 	"fmt"
-
-	"strings"
-
-	"path"
 
 	"github.com/chromedp/chromedp"
 	"github.com/mpppk/tbf/tbf"
 	"github.com/pkg/errors"
 )
-
-type TBFCrawler struct {
-	browser *chromedp.CDP
-	baseURL string
-}
 
 type circlesTasksResult struct {
 	detailUrls []string
@@ -54,19 +42,7 @@ func NewCirclesTasksResult() *circlesTasksResult {
 		genres:     []string{},
 	}
 }
-
-func NewTBFCrawler(ctx context.Context, baseURL string) (*TBFCrawler, error) {
-	c, err := chromedp.New(ctx, chromedp.WithLog(log.Printf))
-	if err != nil {
-		return nil, errors.Wrap(err, "chromedep new error:")
-	}
-	return &TBFCrawler{
-		browser: c,
-		baseURL: baseURL,
-	}, nil
-}
-
-func (t *TBFCrawler) getFetchCirclesTasks(circlesURL string) (chromedp.Tasks, *circlesTasksResult) {
+func circlesFetchingTasks(circlesURL string) (chromedp.Tasks, *circlesTasksResult) {
 	circlesTasksResult := NewCirclesTasksResult()
 	circleListItemSel := "li.circle-list-item"
 	detailUrlsSel := joinSelectors(circleListItemSel, "a.circle-list-item-link")
@@ -86,18 +62,7 @@ func (t *TBFCrawler) getFetchCirclesTasks(circlesURL string) (chromedp.Tasks, *c
 	}, circlesTasksResult
 }
 
-func (t *TBFCrawler) FetchCircles(ctx context.Context, circlesURL string) ([]*tbf.Circle, error) {
-	tasks, res := t.getFetchCirclesTasks(circlesURL)
-	err := t.browser.Run(ctx, tasks)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to execute circles fetching tasks from "+circlesURL)
-	}
-
-	circles, err := fetchResultToCircles(res)
-	return circles, errors.Wrap(err, "error occurred after circles are fetched")
-}
-
-func (t *TBFCrawler) getFetchCircleDetailTasks(circleDetailURL string) (chromedp.Tasks, *tbf.CircleDetail) {
+func circlesDetailFetchingTasks(circleDetailURL string) (chromedp.Tasks, *tbf.CircleDetail) {
 	circleDetail := &tbf.CircleDetail{}
 	circleDetailCardSel := "mat-card.circle-detail-card"
 	circleDetailTableSel := joinSelectors(circleDetailCardSel, "tbody")
@@ -122,28 +87,6 @@ func (t *TBFCrawler) getFetchCircleDetailTasks(circleDetailURL string) (chromedp
 		chromedp.Text(circleGenreSel, &(circleDetail.Circle.Genre), chromedp.ByQueryAll),
 		chromedp.Text(circleGenreFreeFormatSel, &(circleDetail.GenreFreeFormat), chromedp.ByQueryAll),
 	}, circleDetail
-}
-
-func (t *TBFCrawler) FetchCircleDetail(ctx context.Context, circle *tbf.Circle) (*tbf.CircleDetail, error) {
-	tasks, circleDetail := t.getFetchCircleDetailTasks(circle.DetailURL)
-	if err := t.browser.Run(ctx, tasks); err != nil {
-		return nil, errors.Wrapf(err, "failed to navigate to %s", circle.DetailURL)
-	}
-
-	circleDetail.DetailURL = path.Join(t.baseURL, circle.DetailURL)
-	return circleDetail, nil
-}
-
-func (t *TBFCrawler) Shutdown(ctx context.Context) error {
-	return t.browser.Shutdown(ctx)
-}
-
-func (t *TBFCrawler) Wait() error {
-	return t.browser.Wait()
-}
-
-func joinSelectors(selectors ...string) string {
-	return strings.Join(selectors, " ")
 }
 
 func fetchResultToCircles(res *circlesTasksResult) (circles []*tbf.Circle, err error) {
