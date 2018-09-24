@@ -3,7 +3,7 @@ package crawl
 import (
 	"fmt"
 
-	"github.com/chromedp/chromedp"
+	"github.com/mpppk/chromedp"
 	"github.com/mpppk/tbf/tbf"
 	"github.com/pkg/errors"
 )
@@ -53,7 +53,7 @@ func circlesFetchingTasks(circlesURL string) (chromedp.Tasks, *circlesTasksResul
 
 	return chromedp.Tasks{
 		chromedp.Navigate(circlesURL),
-		chromedp.WaitVisible(`li.circle-list-item`, chromedp.AtLeast(200)), // FIXME
+		chromedp.WaitVisible(`li.circle-list-item`, chromedp.AtLeast(469)), // FIXME
 		AttributeValueAll(detailUrlsSel, "href", &(circlesTasksResult.detailUrls), nil, chromedp.ByQueryAll),
 		Texts(circleSpacesSel, &(circlesTasksResult.spaces), chromedp.ByQueryAll),
 		Texts(circleNamesSel, &(circlesTasksResult.names), chromedp.ByQueryAll),

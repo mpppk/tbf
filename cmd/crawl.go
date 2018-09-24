@@ -67,6 +67,7 @@ var crawlCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		// TODO: Add timeout
 		circles, err := crawler.FetchCircles(context.Background(), circlesURL)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "failed to fetch circle information: %v", err)

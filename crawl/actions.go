@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/chromedp/cdproto/cdp"
-	"github.com/chromedp/chromedp"
+	"github.com/mpppk/chromedp"
 	"github.com/pkg/errors"
 )
 

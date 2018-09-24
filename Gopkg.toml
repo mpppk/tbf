@@ -58,4 +58,4 @@
 
 [[constraint]]
   branch = "master"
-  name = "github.com/chromedp/chromedp"
+  name = "github.com/mpppk/chromedp"
