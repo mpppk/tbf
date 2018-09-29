@@ -74,12 +74,7 @@ var crawlCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		var filteredCircles []*tbf.Circle
-		for _, c := range circles {
-			if _, ok := circleDetailMap[c.Space]; !ok {
-				filteredCircles = append(filteredCircles, c)
-			}
-		}
+		filteredCircles := crawl.FilterCircles(circles, circleDetailMap)
 
 		for i, circle := range filteredCircles {
 			fmt.Printf(
