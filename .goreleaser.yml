@@ -30,3 +30,11 @@ changelog:
     exclude:
     - '^docs:'
     - '^test:'
+brew:
+  github:
+    owner: mpppk
+    name: homebrew-tbf
+  homepage: "https://github.com/mpppk/tbf"
+  description: "CLI for tech book festival"
+  test: |
+    system "#{bin}/tbf --help"
